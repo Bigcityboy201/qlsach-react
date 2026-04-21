@@ -32,6 +32,6 @@ export const authorApi = {
   },
 
   async remove(id: number): Promise<void> {
-    await axiosClient.delete(`${API_PATHS.author}/${id}`)
+    await axiosClient.patch(`${API_PATHS.author}/${id}/delete-status`, { deleted: true })
   }
 }

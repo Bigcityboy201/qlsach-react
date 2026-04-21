@@ -32,6 +32,6 @@ export const bookApi = {
   },
 
   async remove(id: number): Promise<void> {
-    await axiosClient.delete(`${API_PATHS.book}/${id}`)
+    await axiosClient.patch(`${API_PATHS.book}/${id}/delete-status`, { deleted: true })
   }
 }

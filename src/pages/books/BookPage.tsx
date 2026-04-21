@@ -30,7 +30,7 @@ export default function BookPage() {
     setError('')
     try {
       const paged = await bookApi.list(page, pageSize)
-      setItems(paged.items)
+      setItems([...paged.items].sort((a, b) => a.id - b.id))
       setTotalPages(paged.totalPages)
     } catch (err) {
       setError((err as Error).message)
@@ -136,6 +136,7 @@ export default function BookPage() {
           }
         ]}
         rows={items}
+        getRowKey={(row) => row.id}
       />
       <div className='pagination'>
         <button type='button' onClick={goPrev}>

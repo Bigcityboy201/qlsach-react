@@ -11,9 +11,15 @@ type DataTableProps<T> = {
   columns: Column<T>[]
   rows: T[]
   emptyText?: string
+  getRowKey?: (item: T) => string | number
 }
 
-export function DataTable<T>({ columns, rows, emptyText = 'No data' }: DataTableProps<T>) {
+export function DataTable<T>({
+  columns,
+  rows,
+  emptyText = 'No data',
+  getRowKey
+}: DataTableProps<T>) {
   return (
     <table className='table'>
       <thead>
@@ -30,7 +36,7 @@ export function DataTable<T>({ columns, rows, emptyText = 'No data' }: DataTable
           </tr>
         ) : (
           rows.map((item, index) => (
-            <tr key={index}>
+            <tr key={getRowKey ? getRowKey(item) : index}>
               {columns.map((column) => (
                 <td key={column.key}>{column.render(item)}</td>
               ))}

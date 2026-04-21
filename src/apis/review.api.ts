@@ -32,6 +32,6 @@ export const reviewApi = {
   },
 
   async remove(id: number): Promise<void> {
-    await axiosClient.delete(`${API_PATHS.review}/${id}`)
+    await axiosClient.patch(`${API_PATHS.review}/${id}/delete-status`, { deleted: true })
   }
 }
