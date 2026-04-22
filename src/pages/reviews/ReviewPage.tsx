@@ -5,6 +5,7 @@ import { reviewApi } from '../../apis/review.api'
 import { DataTable } from '../../components/common/DataTable'
 import { usePagination } from '../../hooks/usePagination'
 import type { Book, Review } from '../../types'
+import { logValidationErrorLikeBackend } from '../../utils'
 
 export default function ReviewPage() {
   const { page, pageSize, goNext, goPrev } = usePagination()
@@ -13,6 +14,7 @@ export default function ReviewPage() {
   const [totalPages, setTotalPages] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [editing, setEditing] = useState<Review | null>(null)
   const [content, setContent] = useState('')
   const [bookId, setBookId] = useState<number>(0)
@@ -54,15 +56,38 @@ export default function ReviewPage() {
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault()
     setError('')
+    setSuccess('')
+    const trimmedContent = content.trim()
+    if (!trimmedContent) {
+      logValidationErrorLikeBackend('Nội dung đánh giá không được để trống!', {
+        content: 'must not be blank'
+      })
+      setError('Nội dung đánh giá không được để trống!')
+      return
+    }
+    if (trimmedContent.length < 2 || trimmedContent.length > 100) {
+      logValidationErrorLikeBackend('Nội dung đánh giá phải từ 2 đến 100 kí tự!', {
+        content: 'size must be between 2 and 100'
+      })
+      setError('Nội dung đánh giá phải từ 2 đến 100 kí tự!')
+      return
+    }
+    if (!bookId) {
+      logValidationErrorLikeBackend('Sách không được để trống!', { bookId: 'must not be null' })
+      setError('Sách không được để trống!')
+      return
+    }
     try {
       if (editing) {
-        const updated = await reviewApi.update(editing.id, { content, bookId })
+        const result = await reviewApi.update(editing.id, { content: trimmedContent, bookId })
         setItems((prevItems) =>
-          prevItems.map((item) => (item.id === editing.id ? { ...item, ...updated } : item))
+          prevItems.map((item) => (item.id === editing.id ? { ...item, ...result.data } : item))
         )
+        setSuccess(result.message)
       } else {
-        await reviewApi.create({ content, bookId })
+        const result = await reviewApi.create({ content: trimmedContent, bookId })
         await fetchReviews()
+        setSuccess(result.message)
       }
       setContent('')
       setEditing(null)
@@ -76,9 +101,11 @@ export default function ReviewPage() {
       return
     }
     setError('')
+    setSuccess('')
     try {
-      await reviewApi.remove(id)
+      const result = await reviewApi.remove(id)
       await fetchReviews()
+      setSuccess(result.message)
     } catch (err) {
       setError((err as Error).message)
     }
@@ -92,7 +119,6 @@ export default function ReviewPage() {
           value={content}
           onChange={(event) => setContent(event.target.value)}
           placeholder='Review content'
-          required
         />
         <select value={bookId} onChange={(event) => setBookId(Number(event.target.value))}>
           {books.map((book) => (
@@ -115,6 +141,7 @@ export default function ReviewPage() {
         ) : null}
       </form>
       {error ? <p className='error'>{error}</p> : null}
+      {success ? <p>{success}</p> : null}
       {loading ? <p>Loading...</p> : null}
       <DataTable
         columns={[

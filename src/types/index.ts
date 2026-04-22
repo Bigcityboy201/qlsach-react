@@ -11,6 +11,11 @@ export interface ApiSuccess<T> {
   pageSize?: number
 }
 
+export interface ApiMutationResult<T> {
+  data: T
+  message: string
+}
+
 export interface ApiError {
   message?: string
   details?: Record<string, string>

@@ -51,9 +51,19 @@ function extractErrorMessage(error: AxiosError): string {
 }
 
 axiosClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response.data) {
+      console.log(response.data)
+    }
+    return response
+  },
   (error) => {
     if (axios.isAxiosError(error)) {
+      if (error.response?.data) {
+        console.error(error.response.data)
+      } else {
+        console.error({ message: error.message })
+      }
       return Promise.reject(new Error(extractErrorMessage(error)))
     }
 

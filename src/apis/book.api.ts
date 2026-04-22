@@ -1,7 +1,7 @@
 // Book API layer: functions for CRUD requests to /book endpoints.
 import axiosClient from './axiosClient'
 import { API_PATHS } from '../constants'
-import type { ApiSuccess, Book, BookRequest, PagedData } from '../types'
+import type { ApiMutationResult, ApiSuccess, Book, BookRequest, PagedData } from '../types'
 
 function toPagedData(response: ApiSuccess<Book[]>): PagedData<Book> {
   return {
@@ -21,17 +21,20 @@ export const bookApi = {
     return toPagedData(data)
   },
 
-  async create(payload: BookRequest): Promise<Book> {
+  async create(payload: BookRequest): Promise<ApiMutationResult<Book>> {
     const { data } = await axiosClient.post<ApiSuccess<Book>>(API_PATHS.book, payload)
-    return data.data
+    return { data: data.data, message: data.message }
   },
 
-  async update(id: number, payload: BookRequest): Promise<Book> {
+  async update(id: number, payload: BookRequest): Promise<ApiMutationResult<Book>> {
     const { data } = await axiosClient.put<ApiSuccess<Book>>(`${API_PATHS.book}/${id}`, payload)
-    return data.data
+    return { data: data.data, message: data.message }
   },
 
-  async remove(id: number): Promise<void> {
-    await axiosClient.patch(`${API_PATHS.book}/${id}/delete-status`, { deleted: true })
+  async remove(id: number): Promise<ApiMutationResult<null>> {
+    const { data } = await axiosClient.patch<ApiSuccess<null>>(`${API_PATHS.book}/${id}/delete-status`, {
+      deleted: true
+    })
+    return { data: data.data, message: data.message }
   }
 }

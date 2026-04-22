@@ -1,7 +1,7 @@
 // Author API layer: functions for CRUD requests to /author endpoints.
 import axiosClient from './axiosClient'
 import { API_PATHS } from '../constants'
-import type { ApiSuccess, Author, AuthorRequest, PagedData } from '../types'
+import type { ApiMutationResult, ApiSuccess, Author, AuthorRequest, PagedData } from '../types'
 
 function toPagedData(response: ApiSuccess<Author[]>): PagedData<Author> {
   return {
@@ -21,17 +21,20 @@ export const authorApi = {
     return toPagedData(data)
   },
 
-  async create(payload: AuthorRequest): Promise<Author> {
+  async create(payload: AuthorRequest): Promise<ApiMutationResult<Author>> {
     const { data } = await axiosClient.post<ApiSuccess<Author>>(API_PATHS.author, payload)
-    return data.data
+    return { data: data.data, message: data.message }
   },
 
-  async update(id: number, payload: AuthorRequest): Promise<Author> {
+  async update(id: number, payload: AuthorRequest): Promise<ApiMutationResult<Author>> {
     const { data } = await axiosClient.put<ApiSuccess<Author>>(`${API_PATHS.author}/${id}`, payload)
-    return data.data
+    return { data: data.data, message: data.message }
   },
 
-  async remove(id: number): Promise<void> {
-    await axiosClient.patch(`${API_PATHS.author}/${id}/delete-status`, { deleted: true })
+  async remove(id: number): Promise<ApiMutationResult<null>> {
+    const { data } = await axiosClient.patch<ApiSuccess<null>>(`${API_PATHS.author}/${id}/delete-status`, {
+      deleted: true
+    })
+    return { data: data.data, message: data.message }
   }
 }

@@ -5,6 +5,7 @@ import { bookApi } from '../../apis/book.api'
 import { DataTable } from '../../components/common/DataTable'
 import { usePagination } from '../../hooks/usePagination'
 import type { Author, Book } from '../../types'
+import { logValidationErrorLikeBackend } from '../../utils'
 
 export default function BookPage() {
   const { page, pageSize, goNext, goPrev } = usePagination()
@@ -13,6 +14,7 @@ export default function BookPage() {
   const [totalPages, setTotalPages] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [editing, setEditing] = useState<Book | null>(null)
   const [name, setName] = useState('')
   const [authorId, setAuthorId] = useState<number>(0)
@@ -54,15 +56,36 @@ export default function BookPage() {
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault()
     setError('')
+    setSuccess('')
+    const trimmedName = name.trim()
+    if (!trimmedName) {
+      logValidationErrorLikeBackend('Tên sách không được để trống!', { name: 'must not be blank' })
+      setError('Tên sách không được để trống!')
+      return
+    }
+    if (trimmedName.length < 2 || trimmedName.length > 100) {
+      logValidationErrorLikeBackend('Tên sách phải từ 2 đến 100 kí tự!', {
+        name: 'size must be between 2 and 100'
+      })
+      setError('Tên sách phải từ 2 đến 100 kí tự!')
+      return
+    }
+    if (!authorId) {
+      logValidationErrorLikeBackend('Tác giả không được để trống!', { authorId: 'must not be null' })
+      setError('Tác giả không được để trống!')
+      return
+    }
     try {
       if (editing) {
-        const updated = await bookApi.update(editing.id, { name, authorId })
+        const result = await bookApi.update(editing.id, { name: trimmedName, authorId })
         setItems((prevItems) =>
-          prevItems.map((item) => (item.id === editing.id ? { ...item, ...updated } : item))
+          prevItems.map((item) => (item.id === editing.id ? { ...item, ...result.data } : item))
         )
+        setSuccess(result.message)
       } else {
-        await bookApi.create({ name, authorId })
+        const result = await bookApi.create({ name: trimmedName, authorId })
         await fetchBooks()
+        setSuccess(result.message)
       }
       setName('')
       setEditing(null)
@@ -76,9 +99,11 @@ export default function BookPage() {
       return
     }
     setError('')
+    setSuccess('')
     try {
-      await bookApi.remove(id)
+      const result = await bookApi.remove(id)
       await fetchBooks()
+      setSuccess(result.message)
     } catch (err) {
       setError((err as Error).message)
     }
@@ -92,7 +117,6 @@ export default function BookPage() {
           value={name}
           onChange={(event) => setName(event.target.value)}
           placeholder='Book name'
-          required
         />
         <select value={authorId} onChange={(event) => setAuthorId(Number(event.target.value))}>
           {authors.map((author) => (
@@ -115,6 +139,7 @@ export default function BookPage() {
         ) : null}
       </form>
       {error ? <p className='error'>{error}</p> : null}
+      {success ? <p>{success}</p> : null}
       {loading ? <p>Loading...</p> : null}
       <DataTable
         columns={[

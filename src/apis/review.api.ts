@@ -1,7 +1,7 @@
 // Review API layer: functions for CRUD requests to /review endpoints.
 import axiosClient from './axiosClient'
 import { API_PATHS } from '../constants'
-import type { ApiSuccess, PagedData, Review, ReviewRequest } from '../types'
+import type { ApiMutationResult, ApiSuccess, PagedData, Review, ReviewRequest } from '../types'
 
 function toPagedData(response: ApiSuccess<Review[]>): PagedData<Review> {
   return {
@@ -21,17 +21,20 @@ export const reviewApi = {
     return toPagedData(data)
   },
 
-  async create(payload: ReviewRequest): Promise<Review> {
+  async create(payload: ReviewRequest): Promise<ApiMutationResult<Review>> {
     const { data } = await axiosClient.post<ApiSuccess<Review>>(API_PATHS.review, payload)
-    return data.data
+    return { data: data.data, message: data.message }
   },
 
-  async update(id: number, payload: ReviewRequest): Promise<Review> {
+  async update(id: number, payload: ReviewRequest): Promise<ApiMutationResult<Review>> {
     const { data } = await axiosClient.put<ApiSuccess<Review>>(`${API_PATHS.review}/${id}`, payload)
-    return data.data
+    return { data: data.data, message: data.message }
   },
 
-  async remove(id: number): Promise<void> {
-    await axiosClient.patch(`${API_PATHS.review}/${id}/delete-status`, { deleted: true })
+  async remove(id: number): Promise<ApiMutationResult<null>> {
+    const { data } = await axiosClient.patch<ApiSuccess<null>>(`${API_PATHS.review}/${id}/delete-status`, {
+      deleted: true
+    })
+    return { data: data.data, message: data.message }
   }
 }

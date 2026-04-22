@@ -4,6 +4,7 @@ import { authorApi } from '../../apis/author.api'
 import { DataTable } from '../../components/common/DataTable'
 import { usePagination } from '../../hooks/usePagination'
 import type { Author } from '../../types'
+import { logValidationErrorLikeBackend } from '../../utils'
 
 export default function AuthorPage() {
   const { page, pageSize, goNext, goPrev } = usePagination()
@@ -11,6 +12,7 @@ export default function AuthorPage() {
   const [totalPages, setTotalPages] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [editing, setEditing] = useState<Author | null>(null)
   const [name, setName] = useState('')
 
@@ -35,15 +37,31 @@ export default function AuthorPage() {
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault()
     setError('')
+    setSuccess('')
+    const trimmedName = name.trim()
+    if (!trimmedName) {
+      logValidationErrorLikeBackend('Tên tác giả không được để trống!', { name: 'must not be blank' })
+      setError('Tên tác giả không được để trống!')
+      return
+    }
+    if (trimmedName.length < 2 || trimmedName.length > 100) {
+      logValidationErrorLikeBackend('Tên tác giả phải từ 2 đến 100 kí tự!', {
+        name: 'size must be between 2 and 100'
+      })
+      setError('Tên tác giả phải từ 2 đến 100 kí tự!')
+      return
+    }
     try {
       if (editing) {
-        const updated = await authorApi.update(editing.id, { name })
+        const result = await authorApi.update(editing.id, { name: trimmedName })
         setItems((prevItems) =>
-          prevItems.map((item) => (item.id === editing.id ? { ...item, ...updated } : item))
+          prevItems.map((item) => (item.id === editing.id ? { ...item, ...result.data } : item))
         )
+        setSuccess(result.message)
       } else {
-        await authorApi.create({ name })
+        const result = await authorApi.create({ name: trimmedName })
         await fetchAuthors()
+        setSuccess(result.message)
       }
       setName('')
       setEditing(null)
@@ -57,9 +75,11 @@ export default function AuthorPage() {
       return
     }
     setError('')
+    setSuccess('')
     try {
-      await authorApi.remove(id)
+      const result = await authorApi.remove(id)
       await fetchAuthors()
+      setSuccess(result.message)
     } catch (err) {
       setError((err as Error).message)
     }
@@ -73,7 +93,6 @@ export default function AuthorPage() {
           value={name}
           onChange={(event) => setName(event.target.value)}
           placeholder='Author name'
-          required
         />
         <button type='submit'>{editing ? 'Update' : 'Create'}</button>
         {editing ? (
@@ -89,6 +108,7 @@ export default function AuthorPage() {
         ) : null}
       </form>
       {error ? <p className='error'>{error}</p> : null}
+      {success ? <p>{success}</p> : null}
       {loading ? <p>Loading...</p> : null}
       <DataTable
         columns={[
