@@ -37,13 +37,16 @@ export default function AuthorPage() {
     setError('')
     try {
       if (editing) {
-        await authorApi.update(editing.id, { name })
+        const updated = await authorApi.update(editing.id, { name })
+        setItems((prevItems) =>
+          prevItems.map((item) => (item.id === editing.id ? { ...item, ...updated } : item))
+        )
       } else {
         await authorApi.create({ name })
+        await fetchAuthors()
       }
       setName('')
       setEditing(null)
-      await fetchAuthors()
     } catch (err) {
       setError((err as Error).message)
     }

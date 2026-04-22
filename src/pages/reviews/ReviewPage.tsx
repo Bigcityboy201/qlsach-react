@@ -56,13 +56,16 @@ export default function ReviewPage() {
     setError('')
     try {
       if (editing) {
-        await reviewApi.update(editing.id, { content, bookId })
+        const updated = await reviewApi.update(editing.id, { content, bookId })
+        setItems((prevItems) =>
+          prevItems.map((item) => (item.id === editing.id ? { ...item, ...updated } : item))
+        )
       } else {
         await reviewApi.create({ content, bookId })
+        await fetchReviews()
       }
       setContent('')
       setEditing(null)
-      await fetchReviews()
     } catch (err) {
       setError((err as Error).message)
     }

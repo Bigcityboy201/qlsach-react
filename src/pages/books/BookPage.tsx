@@ -56,13 +56,16 @@ export default function BookPage() {
     setError('')
     try {
       if (editing) {
-        await bookApi.update(editing.id, { name, authorId })
+        const updated = await bookApi.update(editing.id, { name, authorId })
+        setItems((prevItems) =>
+          prevItems.map((item) => (item.id === editing.id ? { ...item, ...updated } : item))
+        )
       } else {
         await bookApi.create({ name, authorId })
+        await fetchBooks()
       }
       setName('')
       setEditing(null)
-      await fetchBooks()
     } catch (err) {
       setError((err as Error).message)
     }
