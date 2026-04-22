@@ -18,10 +18,14 @@ export default function BookPage() {
   const [authorId, setAuthorId] = useState<number>(0)
 
   async function fetchAuthors() {
-    const paged = await authorApi.list(0, 200)
-    setAuthors(paged.items)
-    if (!authorId && paged.items.length > 0) {
-      setAuthorId(paged.items[0].id)
+    try {
+      const paged = await authorApi.list(0, 200)
+      setAuthors(paged.items)
+      if (!authorId && paged.items.length > 0) {
+        setAuthorId(paged.items[0].id)
+      }
+    } catch (err) {
+      setError((err as Error).message)
     }
   }
 

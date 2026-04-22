@@ -18,10 +18,14 @@ export default function ReviewPage() {
   const [bookId, setBookId] = useState<number>(0)
 
   async function fetchBooks() {
-    const paged = await bookApi.list(0, 200)
-    setBooks(paged.items)
-    if (!bookId && paged.items.length > 0) {
-      setBookId(paged.items[0].id)
+    try {
+      const paged = await bookApi.list(0, 200)
+      setBooks(paged.items)
+      if (!bookId && paged.items.length > 0) {
+        setBookId(paged.items[0].id)
+      }
+    } catch (err) {
+      setError((err as Error).message)
     }
   }
 
